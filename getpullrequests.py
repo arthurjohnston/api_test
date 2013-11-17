@@ -2,8 +2,10 @@ import git,datetime,re,os
 
 
 from git import *
+
+toCheck=os.getcwd()
 os.chdir('..')
-repo = Repo("api_test")
+repo = Repo(toCheck)
 pr="Merge pull request #"
 cutoff=int((datetime.datetime.now()-datetime.timedelta(days=7)).strftime('%s')); 
 assert repo.bare == False
