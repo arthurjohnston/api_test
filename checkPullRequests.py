@@ -6,22 +6,22 @@ import git,datetime,re,os
 from git import *
 
 team=["arthur johnston"]	
+branch="master"
+cutoff=int((datetime.datetime.now()-datetime.timedelta(days=21)).strftime('%s')); 
 
 def get_pullrequest_by_team(repoToCheck):
 	repo = Repo(repoToCheck)
 	pr="Merge pull request #"
-	cutoff=int((datetime.datetime.now()-datetime.timedelta(days=21)).strftime('%s')); 
 	assert repo.bare == False
-	for c in repo.iter_commits('master', max_count=500): #todo make these not magic numbers
+	for c in repo.iter_commits(branch, max_count=500): #todo make these not magic numbers
 		if((c.committed_date>cutoff)and c.message.startswith(pr) and any(str(c.author)==t for t in team)):
 			yield re.search("\d+",c.message).group(0);
 def get_pullrequest_merges(repoToCheck):
 	
 	repo = Repo(repoToCheck)
 	pr="Merge pull request #"
-	cutoff=int((datetime.datetime.now()-datetime.timedelta(days=14)).strftime('%s')); 
 	assert repo.bare == False
-	for c in repo.iter_commits('master', max_count=500): #todo make these not magic numbers
+	for c in repo.iter_commits(branch, max_count=500): #todo make these not magic numbers
 		if((c.committed_date>cutoff)and c.message.startswith(pr)):
 			yield re.search("\d+",c.message).group(0);
 
