@@ -5,18 +5,31 @@ import sys
 import git,datetime,re,os
 from git import *
 
-def get_pullrequest_merges(repoToCheck):
-	print repoToCheck
+team=["arthur johnston"]	
+
+def get_pullrequest_by_team(repoToCheck):
 	repo = Repo(repoToCheck)
 	pr="Merge pull request #"
-	cutoff=int((datetime.datetime.now()-datetime.timedelta(days=7)).strftime('%s')); 
+	cutoff=int((datetime.datetime.now()-datetime.timedelta(days=21)).strftime('%s')); 
+	assert repo.bare == False
+	for c in repo.iter_commits('master', max_count=500): #todo make these not magic numbers
+		if((c.committed_date>cutoff)and c.message.startswith(pr) and any(str(c.author)==t for t in team)):
+			yield re.search("\d+",c.message).group(0);
+def get_pullrequest_merges(repoToCheck):
+	
+	repo = Repo(repoToCheck)
+	pr="Merge pull request #"
+	cutoff=int((datetime.datetime.now()-datetime.timedelta(days=14)).strftime('%s')); 
 	assert repo.bare == False
 	for c in repo.iter_commits('master', max_count=500): #todo make these not magic numbers
 		if((c.committed_date>cutoff)and c.message.startswith(pr)):
 			yield re.search("\d+",c.message).group(0);
-	
+
+#this section is for github specific stuff
 def is_pullrequest_tested(pr,token,owner,repo):	
-	resource = Resource('https://api.github.com/repos/'+owner+'/'+repo+'/pulls/'+pr+'/files', pool=pool)
+	url='https://api.github.com/repos/'+owner+'/'+repo+'/pulls/'+pr+'/files' 
+	
+	resource = Resource(url, pool=pool)
 	
 	headers = {'Content-Type' : 'application/json' }
 	headers['Authorization'] = 'token %s' % token
@@ -27,6 +40,7 @@ def is_pullrequest_tested(pr,token,owner,repo):
 		if 'test' in x['filename'].lower():
 			return True;
 	return False;
+
 if __name__ == "__main__":
 	pool = ConnectionPool(factory=Connection)
 	serverurl="https://api.github.com"
@@ -55,4 +69,9 @@ if __name__ == "__main__":
 			pass;
 		with open("untested_pullrequests.txt","a") as file:
 			file.write("https://github.com/{}/{}/pull/{}\n".format(user,repo,pr))
-
+		who_did_pullrequest(pr,token,user,repo)
+	prs= get_pullrequest_by_team(repo)
+	for pr in prs:
+		with open("by_team_pullrequests.txt","a") as file:
+			file.write("https://github.com/{}/{}/pull/{}\n".format(user,repo,pr))
+	
